@@ -372,9 +372,20 @@ def run_experiments():
     if 0:  # Change to True to test swap_strategy
         print('swap_strategy win rate:', average_win_rate(swap_strategy))
     
+    if 0:  # Change to True to test final_strategy
+        # print("final_strategy return", final_strategy(1, 2))
+        print('final_strategy_original win rate:', average_win_rate(final_strategy_original))
+
     if 1:  # Change to True to test final_strategy
         # print("final_strategy return", final_strategy(1, 2))
         print('final_strategy win rate:', average_win_rate(final_strategy))
+
+    # optimization code for meta_final: I ran this and chose the highest params for meta_final to generate my final_strategy
+    for four_sided_cutoff in range(2,5):
+        for four_sided_count in range(2,4):
+            for six_sided_cutoff in range(3,6):
+                for six_sided_count in range(3,6):
+                    print("%d, %d, %d, %d " % (four_sided_cutoff, four_sided_count, six_sided_cutoff, six_sided_count), 'toshiro_strategy win rate:', average_win_rate(meta_final(four_sided_cutoff, four_sided_count, six_sided_cutoff, six_sided_count)))
 
 
     "*** You may add additional experiments as you wish ***"
@@ -411,17 +422,50 @@ def swap_strategy(score, opponent_score, num_rolls=5):
         return num_rolls
     # END Question 9
 
+#this is wenqin's original strategy, gets to about .75
+def final_strategy_original(score, opponent_score, goal=GOAL_SCORE):
+    """Write a brief description of your final strategy.
+
+    *** YOUR DESCRIPTION HERE ***
+    """
+    # BEGIN Question 10
+    num_rolls = 4
+    margin = 3
+    zero_roll_score = take_turn(0, opponent_score)
+    zero_roll_total_score = score + zero_roll_score
+
+    if (goal - score) <= zero_roll_score:
+        return 0
+
+
+    roll_dice_strategy_delta = 0
+    bacon_strategy_delta = zero_roll_score - margin
+    swap_strategy_delta = opponent_score - zero_roll_total_score
+
+
+    max_delta = max(roll_dice_strategy_delta, bacon_strategy_delta, swap_strategy_delta)
+
+    if max_delta == bacon_strategy_delta:
+        return 0
+    elif max_delta == roll_dice_strategy_delta:
+        return num_rolls
+    else:
+        return 0
 
 def meta_final(four_sided_cutoff, four_sided_count, six_sided_cutoff, six_sided_count):
     def final_strategy(score, opponent_score, goal=GOAL_SCORE):
         # calculate zero roll
+        (first_digit, second_digit) = get_digit(opponent_score, 1, 2)
         
-        base_zero_roll_score = take_turn(0, opponent_score)
+        base_zero_roll_score = max(first_digit, second_digit) + 1
 
-        effective_zero_score = base_zero_roll_score
+        if is_prime(base_zero_roll_score):
+            base_zero_roll_score = next_prime(base_zero_roll_score)
 
         if (goal - score) <= base_zero_roll_score:
             return 0
+
+        effective_zero_score = base_zero_roll_score
 
         if base_zero_roll_score + score + opponent_score % 7 == 0:
             effective_zero_score += 4
@@ -441,7 +485,23 @@ def meta_final(four_sided_cutoff, four_sided_count, six_sided_cutoff, six_sided_
                 return six_sided_count
     return final_strategy
 
-final_strategy = meta_final(3,2,3,4)
+final_strategy = meta_final(2,3,4,4)
+ #final_strategy = meta_final(4,3,5,4)
+
+
+#why didn't the following code work?
+    # if zero_roll_score >= margin:
+    #     return 0
+    # elif is_swap(zero_roll_total_score, opponent_score):
+    #     if opponent_score > zero_roll_total_score:
+    #         return 0
+    # else:
+    #    return num_rolls
+
+
+    # bacon_strategy(score, opponent_score, 7, 6)
+
+    # swap_strategy(score, opponent_score, 6)
 
     # END Question 10
 
